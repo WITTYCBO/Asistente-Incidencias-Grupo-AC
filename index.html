@@ -740,6 +740,8 @@
       -webkit-tap-highlight-color: transparent;
     }
     .pin-key:active { transform: scale(0.92); background: var(--surface2); border-color: var(--accent); }
+    .pin-key.pressed { transform: scale(0.92); background: var(--surface2); border-color: var(--accent); }
+    .pin-key { touch-action: manipulation; user-select: none; -webkit-user-select: none; }
   </style>
 </head>
 <body>
@@ -763,18 +765,18 @@
       <div id="pinError" style="text-align:center;font-size:12px;color:var(--s1);min-height:18px;"></div>
 
       <!-- Teclado numérico -->
-      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:4px;">
-        <button class="pin-key" onclick="pinInput(1)">1</button>
-        <button class="pin-key" onclick="pinInput(2)">2</button>
-        <button class="pin-key" onclick="pinInput(3)">3</button>
-        <button class="pin-key" onclick="pinInput(4)">4</button>
-        <button class="pin-key" onclick="pinInput(5)">5</button>
-        <button class="pin-key" onclick="pinInput(6)">6</button>
-        <button class="pin-key" onclick="pinInput(7)">7</button>
-        <button class="pin-key" onclick="pinInput(8)">8</button>
-        <button class="pin-key" onclick="pinInput(9)">9</button>
-        <button class="pin-key" onclick="pinClear()" style="color:var(--muted);font-size:18px;">⌫</button>
-        <button class="pin-key" onclick="pinInput(0)">0</button>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:4px;" id="pinKeypad">
+        <button class="pin-key" ontouchstart="handlePinTouch(event,1)" onclick="pinInput(1)">1</button>
+        <button class="pin-key" ontouchstart="handlePinTouch(event,2)" onclick="pinInput(2)">2</button>
+        <button class="pin-key" ontouchstart="handlePinTouch(event,3)" onclick="pinInput(3)">3</button>
+        <button class="pin-key" ontouchstart="handlePinTouch(event,4)" onclick="pinInput(4)">4</button>
+        <button class="pin-key" ontouchstart="handlePinTouch(event,5)" onclick="pinInput(5)">5</button>
+        <button class="pin-key" ontouchstart="handlePinTouch(event,6)" onclick="pinInput(6)">6</button>
+        <button class="pin-key" ontouchstart="handlePinTouch(event,7)" onclick="pinInput(7)">7</button>
+        <button class="pin-key" ontouchstart="handlePinTouch(event,8)" onclick="pinInput(8)">8</button>
+        <button class="pin-key" ontouchstart="handlePinTouch(event,9)" onclick="pinInput(9)">9</button>
+        <button class="pin-key" ontouchstart="handlePinClearTouch(event)" onclick="pinClear()" style="color:var(--muted);font-size:18px;">⌫</button>
+        <button class="pin-key" ontouchstart="handlePinTouch(event,0)" onclick="pinInput(0)">0</button>
         <button class="pin-key" style="opacity:0;pointer-events:none;"></button>
       </div>
 
@@ -1339,7 +1341,7 @@
   }
 
   // ─── SUBMIT ───
-  async function submitTicket() {
+  function submitTicket() {
     const salon = document.getElementById('salon').value.trim();
     const modelo = document.getElementById('modelo').value.trim();
     const serie = document.getElementById('serie').value.trim();
@@ -1593,36 +1595,34 @@
     }
   }
 
-  async async function testConnection() {
-    const url = document.getElementById('scriptUrlInput').value.trim();
+  function testConnection() {
+    var url = document.getElementById('scriptUrlInput').value.trim();
     if (!url) { showToast('Introduce primero la URL del script'); return; }
-    const btn = document.getElementById('testBtn');
-    const result = document.getElementById('testResult');
-    btn.textContent = '⏳ Probando...';
+    var btn = document.getElementById('testBtn');
+    var result = document.getElementById('testResult');
+    btn.textContent = 'Probando...';
     btn.disabled = true;
     result.style.display = 'none';
 
-    // Use no-cors mode - if no network error, connection works
-    try {
-      await fetch(url + '?test=1', {
-        method: 'GET',
-        mode: 'no-cors'
+    fetch(url + '?test=1', { method: 'GET', mode: 'no-cors' })
+      .then(function() {
+        result.style.display = 'block';
+        result.style.background = 'var(--s3-dim)';
+        result.style.color = 'var(--s3)';
+        result.style.border = '1px solid rgba(34,197,94,0.3)';
+        result.innerHTML = '✅ URL valida y accesible. Script configurado correctamente.';
+        btn.textContent = '🔌 Probar conexion';
+        btn.disabled = false;
+      })
+      .catch(function() {
+        result.style.display = 'block';
+        result.style.background = 'var(--s1-dim)';
+        result.style.color = 'var(--s1)';
+        result.style.border = '1px solid rgba(239,68,68,0.3)';
+        result.innerHTML = '❌ No se puede acceder a la URL. Comprueba tu conexion a internet.';
+        btn.textContent = '🔌 Probar conexion';
+        btn.disabled = false;
       });
-      // If we get here, the URL is reachable (no-cors wont throw on valid URLs)
-      result.style.display = 'block';
-      result.style.background = 'var(--s3-dim)';
-      result.style.color = 'var(--s3)';
-      result.style.border = '1px solid rgba(34,197,94,0.3)';
-      result.innerHTML = '✅ URL válida y accesible. El script está configurado correctamente.';
-    } catch(e) {
-      result.style.display = 'block';
-      result.style.background = 'var(--s1-dim)';
-      result.style.color = 'var(--s1)';
-      result.style.border = '1px solid rgba(239,68,68,0.3)';
-      result.innerHTML = '❌ No se puede acceder a la URL. Comprueba tu conexión a internet.';
-    }
-    btn.textContent = '🔌 Probar conexión';
-    btn.disabled = false;
   }
 
   // Init sheets status on load
@@ -1693,7 +1693,7 @@
     if (badge) badge.remove();
   }
 
-  async function fotosToBase64() {
+  function fotosToBase64() {
     return Promise.all(photoFiles.map(f => new Promise((res) => {
       const r = new FileReader();
       r.onload = e => res(e.target.result);
@@ -1804,16 +1804,34 @@
     deferredPrompt = e;
     const banner = document.getElementById('installBanner');
     banner.style.display = 'flex';
-    document.getElementById('installBtn').onclick = async () => {
+    document.getElementById('installBtn').onclick = function() {
       deferredPrompt.prompt();
-      const result = await deferredPrompt.userChoice;
-      banner.style.display = 'none';
+      deferredPrompt.userChoice.then(function() {
+        banner.style.display = 'none';
+      });
     };
   });
 
   // ─── SERVICE WORKER ───
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('sw.js').catch(() => {});
+  }
+
+  // ─── PIN TOUCH HANDLERS ───
+  function handlePinTouch(e, n) {
+    e.preventDefault();
+    const btn = e.currentTarget;
+    btn.classList.add('pressed');
+    setTimeout(() => btn.classList.remove('pressed'), 150);
+    pinInput(n);
+  }
+
+  function handlePinClearTouch(e) {
+    e.preventDefault();
+    const btn = e.currentTarget;
+    btn.classList.add('pressed');
+    setTimeout(() => btn.classList.remove('pressed'), 150);
+    pinClear();
   }
 
   // ─── PIN PROTECTION ───
