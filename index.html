@@ -1,0 +1,1402 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#0a0f1e">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="SIGT">
+  <link rel="manifest" href="manifest.json">
+  <title>SIGT · Incidencias</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #060b18;
+      --surface: #0d1426;
+      --surface2: #131d35;
+      --border: #1e2d4a;
+      --text: #e8edf8;
+      --muted: #6b7fa3;
+      --accent: #f97316;
+      --accent-dim: rgba(249,115,22,0.15);
+      --s1: #ef4444;
+      --s1-dim: rgba(239,68,68,0.15);
+      --s2: #f97316;
+      --s2-dim: rgba(249,115,22,0.15);
+      --s3: #22c55e;
+      --s3-dim: rgba(34,197,94,0.15);
+      --radius: 16px;
+      --radius-sm: 10px;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+    body {
+      font-family: 'Syne', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100dvh;
+      overflow-x: hidden;
+      position: relative;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: radial-gradient(ellipse at 30% 20%, rgba(249,115,22,0.04) 0%, transparent 50%),
+                  radial-gradient(ellipse at 70% 80%, rgba(59,130,246,0.04) 0%, transparent 50%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    #app { position: relative; z-index: 1; max-width: 480px; margin: 0 auto; min-height: 100dvh; display: flex; flex-direction: column; }
+
+    /* ─── HEADER ─── */
+    .header {
+      padding: 20px 20px 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+      background: rgba(6,11,24,0.9);
+      backdrop-filter: blur(20px);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .logo-icon {
+      width: 36px;
+      height: 36px;
+      background: var(--accent);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      box-shadow: 0 0 20px rgba(249,115,22,0.3);
+    }
+
+    .logo-text {
+      font-size: 22px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+    }
+
+    .logo-text span {
+      color: var(--accent);
+    }
+
+    .header-sub {
+      font-family: 'Space Mono', monospace;
+      font-size: 9px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+    }
+
+    .history-btn {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      width: 40px;
+      height: 40px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 16px;
+      transition: all 0.2s;
+    }
+    .history-btn:active { transform: scale(0.92); background: var(--surface); }
+
+    /* ─── MAIN CONTENT ─── */
+    .main { flex: 1; padding: 20px; display: flex; flex-direction: column; gap: 20px; }
+
+    /* ─── SCREENS ─── */
+    .screen { display: none; flex-direction: column; gap: 16px; animation: fadeIn 0.3s ease; }
+    .screen.active { display: flex; }
+
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* ─── SECTION TITLE ─── */
+    .section-title {
+      font-family: 'Space Mono', monospace;
+      font-size: 10px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      padding-bottom: 4px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    /* ─── PRIORITY SELECTOR ─── */
+    .priority-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+    }
+
+    .priority-card {
+      background: var(--surface);
+      border: 2px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px 10px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .priority-card::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+
+    .priority-card.s1::before { background: var(--s1-dim); }
+    .priority-card.s2::before { background: var(--s2-dim); }
+    .priority-card.s3::before { background: var(--s3-dim); }
+
+    .priority-card:active { transform: scale(0.95); }
+
+    .priority-card.selected.s1 { border-color: var(--s1); box-shadow: 0 0 20px rgba(239,68,68,0.2); }
+    .priority-card.selected.s2 { border-color: var(--s2); box-shadow: 0 0 20px rgba(249,115,22,0.2); }
+    .priority-card.selected.s3 { border-color: var(--s3); box-shadow: 0 0 20px rgba(34,197,94,0.2); }
+    .priority-card.selected::before { opacity: 1; }
+
+    .p-badge {
+      font-family: 'Space Mono', monospace;
+      font-size: 22px;
+      font-weight: 700;
+      display: block;
+      margin-bottom: 4px;
+    }
+
+    .s1 .p-badge { color: var(--s1); }
+    .s2 .p-badge { color: var(--s2); }
+    .s3 .p-badge { color: var(--s3); }
+
+    .p-label {
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      display: block;
+    }
+
+    .p-desc {
+      font-size: 9px;
+      color: var(--muted);
+      margin-top: 4px;
+      display: block;
+      line-height: 1.3;
+    }
+
+    /* ─── CATEGORY GRID ─── */
+    .category-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+    }
+
+    .cat-card {
+      background: var(--surface);
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 14px 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .cat-card:active { transform: scale(0.96); }
+    .cat-card.selected { border-color: var(--accent); background: var(--accent-dim); }
+
+    .cat-icon { font-size: 22px; flex-shrink: 0; }
+    .cat-text { flex: 1; }
+    .cat-name { font-size: 13px; font-weight: 700; display: block; }
+    .cat-sub { font-size: 10px; color: var(--muted); display: block; margin-top: 1px; }
+
+    /* ─── FORM FIELDS ─── */
+    .field { display: flex; flex-direction: column; gap: 6px; }
+
+    .field label {
+      font-family: 'Space Mono', monospace;
+      font-size: 10px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+    }
+
+    .field label .req { color: var(--accent); }
+
+    .field input, .field select, .field textarea {
+      background: var(--surface);
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text);
+      font-family: 'Syne', sans-serif;
+      font-size: 15px;
+      padding: 12px 14px;
+      width: 100%;
+      outline: none;
+      transition: border-color 0.2s;
+      appearance: none;
+      -webkit-appearance: none;
+    }
+
+    .field select {
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%236b7fa3' stroke-width='2' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 14px center;
+      padding-right: 36px;
+    }
+
+    .field input:focus, .field select:focus, .field textarea:focus {
+      border-color: var(--accent);
+    }
+
+    .field textarea {
+      resize: none;
+      min-height: 80px;
+      line-height: 1.5;
+    }
+
+    .field input::placeholder, .field textarea::placeholder { color: var(--muted); }
+
+    /* ─── QUICK SYMPTOMS ─── */
+    .symptom-pills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 7px;
+    }
+
+    .pill {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 6px 12px;
+      font-size: 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+      color: var(--muted);
+    }
+
+    .pill:active { transform: scale(0.95); }
+    .pill.selected { border-color: var(--accent); background: var(--accent-dim); color: var(--text); }
+
+    /* ─── STATUS ROW ─── */
+    .status-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+    .status-btn {
+      background: var(--surface);
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 12px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .status-btn:active { transform: scale(0.96); }
+    .status-btn.yes.selected { border-color: var(--s1); background: var(--s1-dim); color: var(--s1); }
+    .status-btn.no.selected { border-color: var(--s3); background: var(--s3-dim); color: var(--s3); }
+
+    /* ─── SUBMIT BUTTON ─── */
+    .submit-btn {
+      background: var(--accent);
+      border: none;
+      border-radius: var(--radius);
+      color: white;
+      font-family: 'Syne', sans-serif;
+      font-size: 16px;
+      font-weight: 800;
+      padding: 18px;
+      width: 100%;
+      cursor: pointer;
+      transition: all 0.2s;
+      letter-spacing: 0.5px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      box-shadow: 0 8px 24px rgba(249,115,22,0.3);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .submit-btn::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, transparent 100%);
+    }
+
+    .submit-btn:active { transform: scale(0.97); box-shadow: 0 4px 12px rgba(249,115,22,0.2); }
+    .submit-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    /* ─── PRIORITY INDICATOR BAR ─── */
+    .mvd-bar {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 12px 14px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .mvd-progress {
+      flex: 1;
+      height: 4px;
+      background: var(--border);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+
+    .mvd-fill {
+      height: 100%;
+      background: var(--accent);
+      border-radius: 2px;
+      transition: width 0.3s ease;
+    }
+
+    .mvd-label {
+      font-family: 'Space Mono', monospace;
+      font-size: 10px;
+      color: var(--muted);
+      white-space: nowrap;
+    }
+
+    .mvd-count {
+      font-family: 'Space Mono', monospace;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--accent);
+      white-space: nowrap;
+    }
+
+    /* ─── SUCCESS SCREEN ─── */
+    .success-screen {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      gap: 20px;
+      padding: 40px 20px;
+      animation: fadeIn 0.4s ease;
+      min-height: 80dvh;
+    }
+
+    .success-screen.active { display: flex; }
+
+    .success-icon {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 36px;
+      animation: pulse 0.5s ease;
+    }
+
+    @keyframes pulse {
+      0% { transform: scale(0); opacity: 0; }
+      70% { transform: scale(1.1); }
+      100% { transform: scale(1); opacity: 1; }
+    }
+
+    .success-icon.s1 { background: var(--s1-dim); border: 2px solid var(--s1); }
+    .success-icon.s2 { background: var(--s2-dim); border: 2px solid var(--s2); }
+    .success-icon.s3 { background: var(--s3-dim); border: 2px solid var(--s3); }
+
+    .ticket-id {
+      font-family: 'Space Mono', monospace;
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--accent);
+      letter-spacing: 2px;
+    }
+
+    .ticket-summary {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px;
+      width: 100%;
+      text-align: left;
+    }
+
+    .ticket-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 6px 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 13px;
+    }
+
+    .ticket-row:last-child { border-bottom: none; }
+    .ticket-row .t-key { color: var(--muted); font-size: 11px; font-family: 'Space Mono', monospace; }
+    .ticket-row .t-val { font-weight: 700; }
+
+    .badge-s1 { color: var(--s1); }
+    .badge-s2 { color: var(--s2); }
+    .badge-s3 { color: var(--s3); }
+
+    .new-btn {
+      background: var(--surface2);
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius);
+      color: var(--text);
+      font-family: 'Syne', sans-serif;
+      font-size: 15px;
+      font-weight: 700;
+      padding: 16px 24px;
+      cursor: pointer;
+      transition: all 0.2s;
+      width: 100%;
+    }
+
+    .new-btn:active { transform: scale(0.97); }
+
+    /* ─── HISTORY SCREEN ─── */
+    .history-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding-bottom: 4px;
+    }
+
+    .back-btn {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 14px;
+      flex-shrink: 0;
+    }
+
+    .ticket-item {
+      background: var(--surface);
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 14px;
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+    }
+
+    .ticket-item .t-priority {
+      font-family: 'Space Mono', monospace;
+      font-size: 18px;
+      font-weight: 700;
+      width: 32px;
+      flex-shrink: 0;
+      text-align: center;
+    }
+
+    .ticket-item .t-info { flex: 1; }
+    .ticket-item .t-id { font-family: 'Space Mono', monospace; font-size: 10px; color: var(--muted); }
+    .ticket-item .t-cat { font-size: 14px; font-weight: 700; margin: 2px 0; }
+    .ticket-item .t-salon { font-size: 12px; color: var(--muted); }
+    .ticket-item .t-time { font-family: 'Space Mono', monospace; font-size: 10px; color: var(--muted); text-align: right; flex-shrink: 0; }
+
+    .empty-state {
+      text-align: center;
+      padding: 48px 24px;
+      color: var(--muted);
+    }
+
+    .empty-state .e-icon { font-size: 48px; margin-bottom: 12px; opacity: 0.4; }
+    .empty-state p { font-size: 14px; }
+
+    /* ─── STEP INDICATOR ─── */
+    .steps {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .step-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--border);
+      transition: all 0.2s;
+    }
+
+    .step-dot.active { background: var(--accent); width: 18px; border-radius: 3px; }
+    .step-dot.done { background: var(--s3); }
+
+    .whatsapp-btn {
+      background: #25D366;
+      border: none;
+      border-radius: var(--radius);
+      color: white;
+      font-family: 'Syne', sans-serif;
+      font-size: 16px;
+      font-weight: 800;
+      padding: 18px;
+      width: 100%;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      box-shadow: 0 8px 24px rgba(37,211,102,0.3);
+    }
+    .whatsapp-btn:active { transform: scale(0.97); box-shadow: 0 4px 12px rgba(37,211,102,0.15); }
+
+    /* ─── SCROLLBAR ─── */
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+    /* ─── INSTALL BANNER ─── */
+    .install-banner {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 12px 14px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 12px;
+      color: var(--muted);
+      display: none;
+    }
+
+    .install-banner button {
+      background: var(--accent);
+      border: none;
+      border-radius: 8px;
+      color: white;
+      font-family: 'Syne', sans-serif;
+      font-weight: 700;
+      font-size: 11px;
+      padding: 6px 12px;
+      cursor: pointer;
+      margin-left: auto;
+      white-space: nowrap;
+    }
+
+    .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+    .notice {
+      background: var(--s2-dim);
+      border: 1px solid rgba(249,115,22,0.3);
+      border-radius: var(--radius-sm);
+      padding: 10px 12px;
+      font-size: 12px;
+      color: var(--s2);
+      display: flex;
+      gap: 8px;
+      align-items: flex-start;
+    }
+  </style>
+</head>
+<body>
+<div id="app">
+
+  <!-- HEADER -->
+  <div class="header">
+    <div class="logo">
+      <div class="logo-icon">⚡</div>
+      <div>
+        <div class="logo-text"><span>SI</span>GT</div>
+        <div class="header-sub">Gestión Técnica SAT</div>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;">
+      <div class="steps" id="stepDots">
+        <div class="step-dot active" id="dot1"></div>
+        <div class="step-dot" id="dot2"></div>
+        <div class="step-dot" id="dot3"></div>
+      </div>
+      <button class="history-btn" onclick="showHistory()" title="Historial">📋</button>
+      <button class="history-btn" onclick="showSettings()" title="Configuración">⚙️</button>
+    </div>
+  </div>
+
+  <!-- MAIN -->
+  <div class="main" id="mainContent">
+
+    <!-- ── STEP 1: PRIORIDAD Y CATEGORÍA ── -->
+    <div class="screen active" id="screen1">
+
+      <div id="installBanner" class="install-banner">
+        📲 <span>Añade SIGT a tu pantalla de inicio para acceso rápido</span>
+        <button id="installBtn">Instalar</button>
+      </div>
+
+      <div>
+        <div class="section-title" style="margin-bottom:12px">① Nivel de urgencia</div>
+        <div class="priority-grid">
+          <div class="priority-card s1" onclick="selectPriority('S1', this)">
+            <span class="p-badge">S1</span>
+            <span class="p-label">Crítica</span>
+            <span class="p-desc">Máquina parada, pérdida recaudación</span>
+          </div>
+          <div class="priority-card s2" onclick="selectPriority('S2', this)">
+            <span class="p-badge">S2</span>
+            <span class="p-label">Alta</span>
+            <span class="p-desc">Degradada, funciona con problemas</span>
+          </div>
+          <div class="priority-card s3" onclick="selectPriority('S3', this)">
+            <span class="p-badge">S3</span>
+            <span class="p-label">Normal</span>
+            <span class="p-desc">Mantenimiento o baja prioridad</span>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="section-title" style="margin-bottom:12px">② Tipo de avería</div>
+        <div class="category-grid" id="categoryGrid">
+          <div class="cat-card" onclick="selectCategory('Billetero / MDB', '💵', this)">
+            <span class="cat-icon">💵</span>
+            <div class="cat-text">
+              <span class="cat-name">Billetero</span>
+              <span class="cat-sub">MDB, validador</span>
+            </div>
+          </div>
+          <div class="cat-card" onclick="selectCategory('SSP / Monedas', '🪙', this)">
+            <span class="cat-icon">🪙</span>
+            <div class="cat-text">
+              <span class="cat-name">SSP / Monedas</span>
+              <span class="cat-sub">Canalizador, hopper</span>
+            </div>
+          </div>
+          <div class="cat-card" onclick="selectCategory('Pantalla / Display', '🖥️', this)">
+            <span class="cat-icon">🖥️</span>
+            <div class="cat-text">
+              <span class="cat-name">Pantalla</span>
+              <span class="cat-sub">Display, monitor, TV</span>
+            </div>
+          </div>
+          <div class="cat-card" onclick="selectCategory('Electrónica / Placa', '🔧', this)">
+            <span class="cat-icon">🔧</span>
+            <div class="cat-text">
+              <span class="cat-name">Electrónica</span>
+              <span class="cat-sub">Placa, fuente, conector</span>
+            </div>
+          </div>
+          <div class="cat-card" onclick="selectCategory('Conectividad / Red', '📡', this)">
+            <span class="cat-icon">📡</span>
+            <div class="cat-text">
+              <span class="cat-name">Red / Conectividad</span>
+              <span class="cat-sub">SAS, ethernet, WiFi</span>
+            </div>
+          </div>
+          <div class="cat-card" onclick="selectCategory('Software / Sistema', '💻', this)">
+            <span class="cat-icon">💻</span>
+            <div class="cat-text">
+              <span class="cat-name">Software</span>
+              <span class="cat-sub">Cuelgue, error sistema</span>
+            </div>
+          </div>
+          <div class="cat-card" onclick="selectCategory('Mecánica / Física', '⚙️', this)">
+            <span class="cat-icon">⚙️</span>
+            <div class="cat-text">
+              <span class="cat-name">Mecánica</span>
+              <span class="cat-sub">Puerta, pulsadores, botones</span>
+            </div>
+          </div>
+          <div class="cat-card" onclick="selectCategory('Iluminación / Luz', '💡', this)">
+            <span class="cat-icon">💡</span>
+            <div class="cat-text">
+              <span class="cat-name">Iluminación</span>
+              <span class="cat-sub">Leds, fluorescentes</span>
+            </div>
+          </div>
+          <div class="cat-card" onclick="selectCategory('Sonido / Audio', '🔊', this)">
+            <span class="cat-icon">🔊</span>
+            <div class="cat-text">
+              <span class="cat-name">Sonido</span>
+              <span class="cat-sub">Altavoces, audio</span>
+            </div>
+          </div>
+          <div class="cat-card" onclick="selectCategory('Otro', '❓', this)">
+            <span class="cat-icon">❓</span>
+            <div class="cat-text">
+              <span class="cat-name">Otro</span>
+              <span class="cat-sub">No clasificado</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <button class="submit-btn" id="nextBtn1" onclick="goToStep2()" disabled>
+        Continuar → Datos MVD
+      </button>
+    </div>
+
+    <!-- ── STEP 2: DATOS MVD ── -->
+    <div class="screen" id="screen2">
+
+      <div id="priorityNotice" class="notice">
+        <span>⚠️</span>
+        <span id="priorityNoticeText"></span>
+      </div>
+
+      <div class="field">
+        <label>Salón / Sala <span class="req">*</span></label>
+        <input type="text" id="salon" placeholder="Nombre del salón" autocomplete="off">
+      </div>
+
+      <div class="field-row">
+        <div class="field">
+          <label>Modelo máquina <span class="req">*</span></label>
+          <input type="text" id="modelo" placeholder="ej. Apex 4" autocomplete="off">
+        </div>
+        <div class="field">
+          <label>Nº Serie <span class="req">*</span></label>
+          <input type="text" id="serie" placeholder="ej. 12345" autocomplete="off">
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Síntoma principal <span class="req">*</span></label>
+        <div class="symptom-pills" id="symptomPills" style="margin-bottom:8px"></div>
+        <textarea id="sintoma" placeholder="Describe el problema con el mayor detalle posible..." rows="3"></textarea>
+      </div>
+
+      <div class="field">
+        <label>Errores en pantalla</label>
+        <input type="text" id="errores" placeholder="ej. ERR-045, pantalla roja..." autocomplete="off">
+      </div>
+
+      <div class="field">
+        <label>¿Afecta a la recaudación?</label>
+        <div class="status-row">
+          <button class="status-btn yes" onclick="toggleRecaudacion(true, this)">🔴 Sí, para</button>
+          <button class="status-btn no" onclick="toggleRecaudacion(false, this)">🟢 No afecta</button>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>¿Cuándo empezó?</label>
+        <select id="inicio">
+          <option value="">Selecciona...</option>
+          <option value="Ahora mismo">Ahora mismo</option>
+          <option value="Hace menos de 1 hora">Hace menos de 1 hora</option>
+          <option value="Hoy">Hoy</option>
+          <option value="Ayer">Ayer</option>
+          <option value="Esta semana">Esta semana</option>
+          <option value="No se sabe">No se sabe</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label>Pasos ya probados</label>
+        <input type="text" id="pasos" placeholder="ej. Reinicio, revisión billetero..." autocomplete="off">
+      </div>
+
+      <div class="field">
+        <label>Tu nombre / empleado</label>
+        <input type="text" id="empleado" placeholder="Tu nombre" autocomplete="off">
+      </div>
+
+      <div class="mvd-bar">
+        <div class="mvd-progress"><div class="mvd-fill" id="mvdFill" style="width:0%"></div></div>
+        <div class="mvd-label">MVD completo</div>
+        <div class="mvd-count" id="mvdCount">0/4</div>
+      </div>
+
+      <div style="display:flex;gap:10px;">
+        <button class="new-btn" style="max-width:80px;" onclick="goToStep1()">← Volver</button>
+        <button class="submit-btn" id="submitBtn" onclick="submitTicket()">
+          ⚡ Abrir Incidencia
+        </button>
+      </div>
+    </div>
+
+    <!-- ── SUCCESS ── -->
+    <div class="success-screen" id="successScreen">
+      <div class="success-icon" id="successIcon">✓</div>
+      <div>
+        <div style="font-size:13px;color:var(--muted);margin-bottom:6px;font-family:'Space Mono',monospace;">TICKET ABIERTO</div>
+        <div class="ticket-id" id="ticketId">---</div>
+      </div>
+      <div class="ticket-summary" id="ticketSummary"></div>
+      <button class="whatsapp-btn" onclick="sendWhatsApp(currentTicket)">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+        Enviar por WhatsApp al SAT
+      </button>
+      <button class="new-btn" onclick="resetForm()">+ Nueva Incidencia</button>
+    </div>
+
+
+    <!-- ── SETTINGS ── -->
+    <div class="screen" id="settingsScreen" style="display:none;">
+      <div class="history-header">
+        <button class="back-btn" onclick="hideSettings()">←</button>
+        <div>
+          <div style="font-size:18px;font-weight:800;">Configuración</div>
+          <div style="font-size:11px;color:var(--muted);font-family:'Space Mono',monospace;">Integración Google Sheets</div>
+        </div>
+      </div>
+
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;display:flex;flex-direction:column;gap:12px;">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <div style="font-size:28px;">📊</div>
+          <div>
+            <div style="font-size:15px;font-weight:700;">Google Sheets</div>
+            <div id="sheetsStatus" style="font-size:12px;color:var(--muted);font-family:'Space Mono',monospace;margin-top:2px;">No configurado</div>
+          </div>
+          <div id="sheetsIndicator" style="width:10px;height:10px;border-radius:50%;background:var(--border);margin-left:auto;flex-shrink:0;"></div>
+        </div>
+        <div class="field">
+          <label>URL del Apps Script <span class="req">*</span></label>
+          <textarea id="scriptUrlInput" placeholder="https://script.google.com/macros/s/XXXXX.../exec" rows="3" style="font-family:'Space Mono',monospace;font-size:11px;word-break:break-all;"></textarea>
+        </div>
+        <button class="submit-btn" onclick="saveScriptUrl()" style="padding:14px;">💾 Guardar URL</button>
+        <button id="testBtn" class="new-btn" onclick="testConnection()" style="padding:12px;font-size:13px;">🔌 Probar conexión</button>
+        <div id="testResult" style="display:none;padding:10px 12px;border-radius:var(--radius-sm);font-size:12px;"></div>
+      </div>
+
+      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:16px;">
+        <div style="font-size:13px;font-weight:700;margin-bottom:8px;">📋 Cómo configurar</div>
+        <div style="font-size:12px;color:var(--muted);line-height:1.8;">
+          1. Abre Google Sheets en tu Drive<br>
+          2. <b style="color:var(--text)">Extensiones → Apps Script</b><br>
+          3. Pega el código del script<br>
+          4. <b style="color:var(--text)">Implementar → Nueva implementación</b><br>
+          5. Tipo: <b style="color:var(--text)">Aplicación web</b><br>
+          6. Ejecutar como: <b style="color:var(--text)">Yo (tu cuenta)</b><br>
+          7. Acceso: <b style="color:var(--text)">Cualquier persona</b><br>
+          8. Copia la URL y pégala arriba
+        </div>
+      </div>
+
+      <div style="background:var(--s2-dim);border:1px solid rgba(249,115,22,0.3);border-radius:var(--radius);padding:14px;">
+        <div style="font-size:12px;color:var(--s2);line-height:1.6;">
+          ⚠️ Sin URL la app funciona en <b>modo local</b>. Los IDs no serán correlativos ni quedarán registrados en el Sheet.
+        </div>
+      </div>
+    </div>
+
+    <!-- ── HISTORY ── -->
+    <div class="screen" id="historyScreen" style="display:none;">
+      <div class="history-header">
+        <button class="back-btn" onclick="hideHistory()">←</button>
+        <div>
+          <div style="font-size:18px;font-weight:800;">Mis Incidencias</div>
+          <div style="font-size:11px;color:var(--muted);font-family:'Space Mono',monospace;" id="historyCount"></div>
+        </div>
+      </div>
+      <div id="historyList"></div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  // ─── WHATSAPP ───
+  let currentTicket = null;
+
+  function sendWhatsApp(ticket) {
+    const rec = ticket.recaudacion === true ? 'SÍ ⚠️' : ticket.recaudacion === false ? 'No' : 'No indicado';
+    const lines = [
+      `🚨 *INCIDENCIA SIGT* 🚨`,
+      ``,
+      `📋 *Ticket:* ${ticket.id}`,
+      `🔴 *Prioridad:* ${ticket.priority} ${ticket.priority === 'S1' ? '— CRÍTICA' : ticket.priority === 'S2' ? '— ALTA' : '— NORMAL'}`,
+      `🔧 *Tipo:* ${ticket.categoryIcon} ${ticket.category}`,
+      ``,
+      `📍 *Salón:* ${ticket.salon}`,
+      `🎰 *Máquina:* ${ticket.modelo}`,
+      `🔢 *Serie:* ${ticket.serie}`,
+      ``,
+      `⚠️ *Síntoma:* ${ticket.sintoma}`,
+      ticket.errores ? `❌ *Errores:* ${ticket.errores}` : null,
+      `💰 *Recaudación afectada:* ${rec}`,
+      ticket.inicio ? `🕐 *Inicio:* ${ticket.inicio}` : null,
+      ticket.pasos ? `🔁 *Pasos probados:* ${ticket.pasos}` : null,
+      ``,
+      `👤 *Empleado:* ${ticket.empleado || 'No indicado'}`,
+      `⏰ *Hora:* ${new Date(ticket.timestamp).toLocaleString('es-ES')}`,
+    ].filter(l => l !== null).join('\n');
+
+    const encoded = encodeURIComponent(lines);
+    window.open(`https://wa.me/34646365886?text=${encoded}`, '_blank');
+  }
+
+  // ─── STATE ───
+  const state = {
+    priority: null,
+    category: null,
+    categoryIcon: null,
+    recaudacion: null,
+    currentStep: 1
+  };
+
+  // ─── SYMPTOM SUGGESTIONS PER CATEGORY ───
+  const symptoms = {
+    'Billetero / MDB': ['No acepta billetes', 'Billetes atascados', 'Error lectura', 'No devuelve cambio', 'Comunicación MDB perdida'],
+    'SSP / Monedas': ['No acepta monedas', 'No entrega monedas', 'Error hopper', 'Canalizador bloqueado', 'Error SSP'],
+    'Pantalla / Display': ['Sin imagen', 'Pantalla negra', 'Imagen distorsionada', 'Líneas en pantalla', 'Pantalla táctil no responde'],
+    'Electrónica / Placa': ['No enciende', 'Se apaga sola', 'Error placa', 'Fallo fuente alimentación', 'Conector suelto'],
+    'Conectividad / Red': ['Sin comunicación SAS', 'Error de red', 'Sin internet', 'Desconectada del sistema', 'Error link'],
+    'Software / Sistema': ['Se cuelga', 'Error en pantalla', 'No arranca juego', 'Pantalla azul', 'Necesita reinicio'],
+    'Mecánica / Física': ['Puerta no cierra', 'Botón atascado', 'Pulsador roto', 'Ruido extraño', 'Daño físico'],
+    'Iluminación / Luz': ['Sin luz interna', 'LEDs fundidos', 'Parpadeo', 'Marquesina sin luz'],
+    'Sonido / Audio': ['Sin sonido', 'Sonido distorsionado', 'Altavoz roto', 'Volumen incorrecto'],
+    'Otro': ['Problema no clasificado', 'Revisión preventiva']
+  };
+
+  // ─── PRIORITY SELECT ───
+  function selectPriority(p, el) {
+    state.priority = p;
+    document.querySelectorAll('.priority-card').forEach(c => c.classList.remove('selected'));
+    el.classList.add('selected');
+    updateNextBtn1();
+    navigator.vibrate && navigator.vibrate(30);
+  }
+
+  function selectCategory(name, icon, el) {
+    state.category = name;
+    state.categoryIcon = icon;
+    document.querySelectorAll('.cat-card').forEach(c => c.classList.remove('selected'));
+    el.classList.add('selected');
+    updateNextBtn1();
+    navigator.vibrate && navigator.vibrate(20);
+  }
+
+  function updateNextBtn1() {
+    document.getElementById('nextBtn1').disabled = !(state.priority && state.category);
+  }
+
+  // ─── STEP NAVIGATION ───
+  function goToStep2() {
+    if (!state.priority || !state.category) return;
+
+    // Set symptom pills
+    const pills = document.getElementById('symptomPills');
+    pills.innerHTML = '';
+    const syms = symptoms[state.category] || [];
+    syms.forEach(s => {
+      const p = document.createElement('div');
+      p.className = 'pill';
+      p.textContent = s;
+      p.onclick = () => {
+        p.classList.toggle('selected');
+        const txt = document.getElementById('sintoma');
+        const selected = [...pills.querySelectorAll('.pill.selected')].map(x => x.textContent).join(', ');
+        txt.value = selected;
+        updateMVD();
+      };
+      pills.appendChild(p);
+    });
+
+    // Priority notice
+    const notices = {
+      'S1': '🔴 S1 CRÍTICA: Respuesta en menos de 2 horas. Completa el MVD para apertura inmediata.',
+      'S2': '🟠 S2 ALTA: Respuesta preferente. El sistema priorizará asignación con técnico cualificado.',
+      'S3': '🟢 S3 NORMAL: Se gestionará en cola estándar. Incluye toda la información posible.'
+    };
+    document.getElementById('priorityNoticeText').textContent = notices[state.priority];
+
+    const n = document.getElementById('priorityNotice');
+    n.style.borderColor = state.priority === 'S1' ? 'rgba(239,68,68,0.4)' : state.priority === 'S2' ? 'rgba(249,115,22,0.3)' : 'rgba(34,197,94,0.3)';
+    n.style.background = state.priority === 'S1' ? 'var(--s1-dim)' : state.priority === 'S2' ? 'var(--s2-dim)' : 'var(--s3-dim)';
+    n.style.color = state.priority === 'S1' ? 'var(--s1)' : state.priority === 'S2' ? 'var(--s2)' : 'var(--s3)';
+
+    document.getElementById('screen1').classList.remove('active');
+    document.getElementById('screen2').classList.add('active');
+    state.currentStep = 2;
+    updateDots();
+
+    // Auto-fill employee
+    const saved = localStorage.getItem('sigt_empleado');
+    if (saved) document.getElementById('empleado').value = saved;
+
+    // Add listeners for MVD
+    ['salon', 'modelo', 'serie', 'sintoma'].forEach(id => {
+      document.getElementById(id).addEventListener('input', updateMVD);
+    });
+    updateMVD();
+
+    window.scrollTo(0, 0);
+  }
+
+  function goToStep1() {
+    document.getElementById('screen2').classList.remove('active');
+    document.getElementById('screen1').classList.add('active');
+    state.currentStep = 1;
+    updateDots();
+  }
+
+  function updateDots() {
+    const step = state.currentStep;
+    document.getElementById('dot1').className = 'step-dot ' + (step > 1 ? 'done' : step === 1 ? 'active' : '');
+    document.getElementById('dot2').className = 'step-dot ' + (step > 2 ? 'done' : step === 2 ? 'active' : '');
+    document.getElementById('dot3').className = 'step-dot ' + (step === 3 ? 'active' : '');
+  }
+
+  // ─── MVD PROGRESS ───
+  function updateMVD() {
+    const fields = [
+      document.getElementById('salon').value.trim(),
+      document.getElementById('modelo').value.trim(),
+      document.getElementById('serie').value.trim(),
+      document.getElementById('sintoma').value.trim()
+    ];
+    const filled = fields.filter(f => f.length > 0).length;
+    const pct = (filled / 4) * 100;
+    document.getElementById('mvdFill').style.width = pct + '%';
+    document.getElementById('mvdCount').textContent = filled + '/4';
+    document.getElementById('submitBtn').disabled = filled < 4;
+  }
+
+  // ─── RECAUDACION ───
+  function toggleRecaudacion(val, btn) {
+    state.recaudacion = val;
+    document.querySelectorAll('.status-btn').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+
+    // Auto-suggest S1 if recaudacion affected
+    if (val && state.priority === 'S3') {
+      document.getElementById('priorityNoticeText').textContent += ' ⚠️ La recaudación está afectada. Considera elevar a S1 o S2.';
+    }
+  }
+
+  // ─── GOOGLE SHEETS URL ───
+  const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyjjIgsbUbAJvoI5_kdtUBIYL3jmNkgzUNBooPq7kOH9up0gxlcTLua6F8laSt34L61/exec';
+
+  function generateLocalId() {
+    const d = new Date();
+    const pad = n => String(n).padStart(2, '0');
+    return `TK-LOCAL-${d.getFullYear().toString().slice(2)}${pad(d.getMonth()+1)}${pad(d.getDate())}-${Math.floor(Math.random()*9000)+1000}`;
+  }
+
+  // ─── SUBMIT ───
+  async function submitTicket() {
+    const salon = document.getElementById('salon').value.trim();
+    const modelo = document.getElementById('modelo').value.trim();
+    const serie = document.getElementById('serie').value.trim();
+    const sintoma = document.getElementById('sintoma').value.trim();
+
+    if (!salon || !modelo || !serie || !sintoma) return;
+
+    const empleado = document.getElementById('empleado').value.trim();
+    if (empleado) localStorage.setItem('sigt_empleado', empleado);
+
+    const payload = {
+      priority: state.priority,
+      category: state.category,
+      categoryIcon: state.categoryIcon,
+      salon, modelo, serie, sintoma,
+      errores: document.getElementById('errores').value.trim(),
+      inicio: document.getElementById('inicio').value,
+      pasos: document.getElementById('pasos').value.trim(),
+      recaudacion: state.recaudacion,
+      empleado
+    };
+
+    // Show loading state
+    const btn = document.getElementById('submitBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<span style="opacity:0.7">⏳ Registrando...</span>';
+
+    let ticketId, ticketNumero;
+
+    if (APPS_SCRIPT_URL) {
+      try {
+        // Send to Google Sheets via Apps Script
+        const res = await fetch(APPS_SCRIPT_URL, {
+          method: 'POST',
+          body: JSON.stringify(payload),
+          headers: { 'Content-Type': 'text/plain' } // Apps Script needs text/plain for no-cors
+        });
+        const data = await res.json();
+        ticketId = data.id;
+        ticketNumero = data.numero;
+      } catch (err) {
+        console.warn('Google Sheets error, using local ID:', err);
+        ticketId = generateLocalId();
+        ticketNumero = null;
+        showToast('⚠️ Sin conexión con Sheets. ID local asignado.');
+      }
+    } else {
+      ticketId = generateLocalId();
+      ticketNumero = null;
+    }
+
+    btn.disabled = false;
+    btn.innerHTML = '⚡ Abrir Incidencia';
+
+    const ticket = {
+      id: ticketId,
+      numero: ticketNumero,
+      timestamp: new Date().toISOString(),
+      ...payload
+    };
+
+    // Save to localStorage
+    const tickets = JSON.parse(localStorage.getItem('sigt_tickets') || '[]');
+    tickets.unshift(ticket);
+    localStorage.setItem('sigt_tickets', JSON.stringify(tickets.slice(0, 100)));
+
+    showSuccess(ticket);
+    currentTicket = ticket;
+    navigator.vibrate && navigator.vibrate([100, 50, 100]);
+  }
+
+  function showToast(msg) {
+    const t = document.createElement('div');
+    t.style.cssText = `position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#1e2d4a;color:#e8edf8;padding:12px 20px;border-radius:12px;font-size:13px;z-index:9999;white-space:nowrap;box-shadow:0 4px 20px rgba(0,0,0,0.4);`;
+    t.textContent = msg;
+    document.body.appendChild(t);
+    setTimeout(() => t.remove(), 3500);
+  }
+
+  // ─── SUCCESS ───
+  function showSuccess(ticket) {
+    document.getElementById('screen2').classList.remove('active');
+
+    const s = document.getElementById('successScreen');
+    s.style.display = 'flex';
+
+    const icon = document.getElementById('successIcon');
+    icon.className = 'success-icon ' + ticket.priority.toLowerCase();
+    icon.textContent = '✓';
+
+    document.getElementById('ticketId').textContent = ticket.id;
+
+    const colors = { S1: 'badge-s1', S2: 'badge-s2', S3: 'badge-s3' };
+
+    const summary = document.getElementById('ticketSummary');
+    const rows = [
+      ['Prioridad', `<span class="${colors[ticket.priority]}">${ticket.priority} ${ticket.priority === 'S1' ? '— CRÍTICA' : ticket.priority === 'S2' ? '— ALTA' : '— NORMAL'}</span>`],
+      ['Tipo', `${ticket.categoryIcon} ${ticket.category}`],
+      ['Salón', ticket.salon],
+      ['Máquina', `${ticket.modelo} · ${ticket.serie}`],
+      ['Síntoma', ticket.sintoma.length > 60 ? ticket.sintoma.substring(0,60)+'…' : ticket.sintoma],
+      ['Recaudación afectada', ticket.recaudacion === true ? '🔴 Sí' : ticket.recaudacion === false ? '🟢 No' : '—'],
+      ['Hora apertura', new Date(ticket.timestamp).toLocaleTimeString('es-ES', {hour:'2-digit', minute:'2-digit'})]
+    ];
+
+    summary.innerHTML = rows.map(([k, v]) => `
+      <div class="ticket-row">
+        <span class="t-key">${k}</span>
+        <span class="t-val" style="text-align:right;max-width:60%">${v}</span>
+      </div>
+    `).join('');
+
+    state.currentStep = 3;
+    updateDots();
+    window.scrollTo(0, 0);
+  }
+
+  function resetForm() {
+    // Reset state
+    state.priority = null;
+    state.category = null;
+    state.categoryIcon = null;
+    state.recaudacion = null;
+    state.currentStep = 1;
+
+    // Reset UI
+    document.querySelectorAll('.priority-card').forEach(c => c.classList.remove('selected'));
+    document.querySelectorAll('.cat-card').forEach(c => c.classList.remove('selected'));
+    document.getElementById('nextBtn1').disabled = true;
+
+    // Reset form
+    ['salon', 'modelo', 'serie', 'sintoma', 'errores', 'pasos', 'empleado'].forEach(id => {
+      document.getElementById(id).value = '';
+    });
+    document.getElementById('inicio').value = '';
+    document.querySelectorAll('.status-btn').forEach(b => b.classList.remove('selected'));
+
+    document.getElementById('successScreen').style.display = 'none';
+    document.getElementById('screen1').classList.add('active');
+    updateDots();
+    window.scrollTo(0, 0);
+
+    // Restore employee name
+    const saved = localStorage.getItem('sigt_empleado');
+    if (saved) document.getElementById('empleado').value = saved;
+  }
+
+  // ─── HISTORY ───
+  function showHistory() {
+    document.getElementById('screen1').classList.remove('active');
+    document.getElementById('screen2').classList.remove('active');
+    document.getElementById('successScreen').style.display = 'none';
+    document.getElementById('historyScreen').style.display = 'flex';
+    document.getElementById('historyScreen').style.flexDirection = 'column';
+    document.getElementById('historyScreen').style.gap = '12px';
+
+    const tickets = JSON.parse(localStorage.getItem('sigt_tickets') || '[]');
+    document.getElementById('historyCount').textContent = tickets.length + ' incidencia(s)';
+
+    const list = document.getElementById('historyList');
+    if (tickets.length === 0) {
+      list.innerHTML = '<div class="empty-state"><div class="e-icon">📋</div><p>Sin incidencias registradas</p></div>';
+    } else {
+      const colors = { S1: 'var(--s1)', S2: 'var(--s2)', S3: 'var(--s3)' };
+      list.innerHTML = tickets.map(t => {
+        const d = new Date(t.timestamp);
+        const time = d.toLocaleDateString('es-ES', {day:'2-digit', month:'2-digit'}) + ' ' + d.toLocaleTimeString('es-ES', {hour:'2-digit', minute:'2-digit'});
+        return `
+          <div class="ticket-item">
+            <div class="t-priority" style="color:${colors[t.priority]}">${t.priority}</div>
+            <div class="t-info">
+              <div class="t-id">${t.id}</div>
+              <div class="t-cat">${t.categoryIcon} ${t.category}</div>
+              <div class="t-salon">${t.salon} · ${t.modelo}</div>
+            </div>
+            <div class="t-time">${time}</div>
+          </div>
+        `;
+      }).join('');
+    }
+  }
+
+  function hideHistory() {
+    document.getElementById('historyScreen').style.display = 'none';
+    if (state.currentStep === 1) {
+      document.getElementById('screen1').classList.add('active');
+    } else if (state.currentStep === 2) {
+      document.getElementById('screen2').classList.add('active');
+    } else {
+      document.getElementById('successScreen').style.display = 'flex';
+    }
+  }
+
+
+  // ─── SETTINGS ───
+  function showSettings() {
+    ['screen1','screen2'].forEach(id => document.getElementById(id).classList.remove('active'));
+    document.getElementById('successScreen').style.display = 'none';
+    document.getElementById('historyScreen').style.display = 'none';
+    const s = document.getElementById('settingsScreen');
+    s.style.display = 'flex';
+    s.style.flexDirection = 'column';
+    s.style.gap = '16px';
+
+    // Load saved URL
+    const saved = APPS_SCRIPT_URL;
+    document.getElementById('scriptUrlInput').value = saved;
+    updateSheetsStatus();
+  }
+
+  function hideSettings() {
+    document.getElementById('settingsScreen').style.display = 'none';
+    if (state.currentStep === 1) document.getElementById('screen1').classList.add('active');
+    else if (state.currentStep === 2) document.getElementById('screen2').classList.add('active');
+    else document.getElementById('successScreen').style.display = 'flex';
+  }
+
+  function saveScriptUrl() {
+    const url = document.getElementById('scriptUrlInput').value.trim();
+    if (url && !url.startsWith('https://script.google.com/macros/s/')) {
+      showToast('⚠️ La URL no parece válida. Debe empezar por https://script.google.com/macros/s/');
+      return;
+    }
+    // URL ya configurada en el código
+
+    updateSheetsStatus();
+    showToast(url ? '✅ URL guardada correctamente' : '🗑️ URL eliminada. Modo local activo.');
+  }
+
+  function updateSheetsStatus() {
+    const url = APPS_SCRIPT_URL;
+    const status = document.getElementById('sheetsStatus');
+    const indicator = document.getElementById('sheetsIndicator');
+    if (url) {
+      status.textContent = 'Configurado ✓';
+      status.style.color = 'var(--s3)';
+      indicator.style.background = 'var(--s3)';
+      indicator.style.boxShadow = '0 0 6px var(--s3)';
+    } else {
+      status.textContent = 'No configurado';
+      status.style.color = 'var(--muted)';
+      indicator.style.background = 'var(--border)';
+      indicator.style.boxShadow = 'none';
+    }
+  }
+
+  async function testConnection() {
+    const url = document.getElementById('scriptUrlInput').value.trim();
+    if (!url) { showToast('Introduce primero la URL del script'); return; }
+    const btn = document.getElementById('testBtn');
+    const result = document.getElementById('testResult');
+    btn.textContent = '⏳ Probando...';
+    btn.disabled = true;
+    result.style.display = 'none';
+    try {
+      const res = await fetch(url, { method: 'GET' });
+      const data = await res.json();
+      result.style.display = 'block';
+      result.style.background = 'var(--s3-dim)';
+      result.style.color = 'var(--s3)';
+      result.style.border = '1px solid rgba(34,197,94,0.3)';
+      result.innerHTML = `✅ Conexión OK · Próximo ticket nº <b>${data.siguiente}</b>`;
+    } catch(e) {
+      result.style.display = 'block';
+      result.style.background = 'var(--s1-dim)';
+      result.style.color = 'var(--s1)';
+      result.style.border = '1px solid rgba(239,68,68,0.3)';
+      result.innerHTML = `❌ Error de conexión. Verifica que el script está publicado con acceso "Cualquier persona".`;
+    }
+    btn.textContent = '🔌 Probar conexión';
+    btn.disabled = false;
+  }
+
+  // Init sheets status on load
+  window.addEventListener('load', updateSheetsStatus);
+
+  // ─── PWA INSTALL ───
+  let deferredPrompt;
+  window.addEventListener('beforeinstallprompt', e => {
+    e.preventDefault();
+    deferredPrompt = e;
+    const banner = document.getElementById('installBanner');
+    banner.style.display = 'flex';
+    document.getElementById('installBtn').onclick = async () => {
+      deferredPrompt.prompt();
+      const result = await deferredPrompt.userChoice;
+      banner.style.display = 'none';
+    };
+  });
+
+  // ─── SERVICE WORKER ───
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+  }
+</script>
+</body>
+</html>
