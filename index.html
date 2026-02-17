@@ -213,7 +213,7 @@
     .category-grid {
       display: grid;
       grid-template-columns: repeat(2, 1fr);
-      gap: 10px;
+      gap: 8px;
     }
 
     .cat-card {
@@ -233,7 +233,8 @@
 
     .cat-icon { font-size: 22px; flex-shrink: 0; }
     .cat-text { flex: 1; }
-    .cat-name { font-size: 13px; font-weight: 700; display: block; }
+    .cat-name { font-size: 12px; font-weight: 700; display: block; }
+    .cat-code { display: inline-block; background: var(--accent); color: white; font-family: Space Mono, monospace; font-size: 9px; font-weight: 700; padding: 1px 5px; border-radius: 4px; margin-right: 4px; vertical-align: middle; }
     .cat-sub { font-size: 10px; color: var(--muted); display: block; margin-top: 1px; }
 
     /* ─── FORM FIELDS ─── */
@@ -578,6 +579,96 @@
     }
     .whatsapp-btn:active { transform: scale(0.97); box-shadow: 0 4px 12px rgba(37,211,102,0.15); }
 
+
+    /* ─── PHOTO UPLOAD ─── */
+    .photo-upload-area {
+      background: var(--surface);
+      border: 1.5px dashed var(--border);
+      border-radius: var(--radius-sm);
+      min-height: 100px;
+      cursor: pointer;
+      transition: border-color 0.2s;
+      overflow: hidden;
+    }
+    .photo-upload-area:active { border-color: var(--accent); }
+    .photo-upload-area.has-photos { border-style: solid; border-color: var(--accent); }
+
+    .photo-placeholder {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      gap: 4px;
+    }
+
+    .photo-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 4px;
+      padding: 4px;
+    }
+
+    .photo-thumb {
+      position: relative;
+      aspect-ratio: 4/3;
+      border-radius: 8px;
+      overflow: hidden;
+      background: var(--surface2);
+    }
+
+    .photo-thumb img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .photo-thumb .remove-photo {
+      position: absolute;
+      top: 4px;
+      right: 4px;
+      background: rgba(0,0,0,0.7);
+      border: none;
+      border-radius: 50%;
+      width: 22px;
+      height: 22px;
+      color: white;
+      font-size: 12px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      line-height: 1;
+    }
+
+    .photo-action-btn {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--muted);
+      font-family: Syne, sans-serif;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 8px 12px;
+      cursor: pointer;
+      flex: 1;
+      transition: all 0.15s;
+    }
+    .photo-action-btn:active { background: var(--surface); border-color: var(--accent); color: var(--text); }
+
+    .photo-count-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      background: var(--accent-dim);
+      border: 1px solid var(--accent);
+      border-radius: 20px;
+      padding: 3px 10px;
+      font-size: 11px;
+      color: var(--accent);
+      font-family: Space Mono, monospace;
+      margin-top: 4px;
+    }
     /* ─── SCROLLBAR ─── */
     ::-webkit-scrollbar { width: 4px; }
     ::-webkit-scrollbar-track { background: transparent; }
@@ -747,74 +838,102 @@
       <div>
         <div class="section-title" style="margin-bottom:12px">② Tipo de avería</div>
         <div class="category-grid" id="categoryGrid">
-          <div class="cat-card" onclick="selectCategory('Billetero / MDB', '💵', this)">
-            <span class="cat-icon">💵</span>
+          <div class="cat-card" onclick="selectCategory('C01 · Energía / Arranque', '⚡', this)">
+            <span class="cat-icon">⚡</span>
             <div class="cat-text">
-              <span class="cat-name">Billetero</span>
-              <span class="cat-sub">MDB, validador</span>
+              <span class="cat-name"><span class="cat-code">C01</span> Energía</span>
+              <span class="cat-sub">No enciende, reinicios, quemado</span>
             </div>
           </div>
-          <div class="cat-card" onclick="selectCategory('SSP / Monedas', '🪙', this)">
-            <span class="cat-icon">🪙</span>
-            <div class="cat-text">
-              <span class="cat-name">SSP / Monedas</span>
-              <span class="cat-sub">Canalizador, hopper</span>
-            </div>
-          </div>
-          <div class="cat-card" onclick="selectCategory('Pantalla / Display', '🖥️', this)">
+          <div class="cat-card" onclick="selectCategory('C02 · Pantalla / Vídeo / Audio', '🖥️', this)">
             <span class="cat-icon">🖥️</span>
             <div class="cat-text">
-              <span class="cat-name">Pantalla</span>
-              <span class="cat-sub">Display, monitor, TV</span>
+              <span class="cat-name"><span class="cat-code">C02</span> Pantalla</span>
+              <span class="cat-sub">Negra, No Signal, colores, audio</span>
             </div>
           </div>
-          <div class="cat-card" onclick="selectCategory('Electrónica / Placa', '🔧', this)">
-            <span class="cat-icon">🔧</span>
+          <div class="cat-card" onclick="selectCategory('C03 · Billetero / MDB', '💵', this)">
+            <span class="cat-icon">💵</span>
             <div class="cat-text">
-              <span class="cat-name">Electrónica</span>
-              <span class="cat-sub">Placa, fuente, conector</span>
+              <span class="cat-name"><span class="cat-code">C03</span> Billetero</span>
+              <span class="cat-sub">No acepta billetes, luz roja</span>
             </div>
           </div>
-          <div class="cat-card" onclick="selectCategory('Conectividad / Red', '📡', this)">
+          <div class="cat-card" onclick="selectCategory('C04 · Monedas / Hopper', '🪙', this)">
+            <span class="cat-icon">🪙</span>
+            <div class="cat-text">
+              <span class="cat-name"><span class="cat-code">C04</span> Monedas</span>
+              <span class="cat-sub">No paga premios, atasco hopper</span>
+            </div>
+          </div>
+          <div class="cat-card" onclick="selectCategory('C05 · Pagos / Devolución', '💰', this)">
+            <span class="cat-icon">💰</span>
+            <div class="cat-text">
+              <span class="cat-name"><span class="cat-code">C05</span> Pagos</span>
+              <span class="cat-sub">Paga de más/menos, error lógico</span>
+            </div>
+          </div>
+          <div class="cat-card" onclick="selectCategory('C06 · Puertas / Cerraduras', '🔑', this)">
+            <span class="cat-icon">🔑</span>
+            <div class="cat-text">
+              <span class="cat-name"><span class="cat-code">C06</span> Accesos</span>
+              <span class="cat-sub">Llave rota, cerradura, puerta</span>
+            </div>
+          </div>
+          <div class="cat-card" onclick="selectCategory('C07 · Red / Telemetría', '📡', this)">
             <span class="cat-icon">📡</span>
             <div class="cat-text">
-              <span class="cat-name">Red / Conectividad</span>
-              <span class="cat-sub">SAS, ethernet, WiFi</span>
+              <span class="cat-name"><span class="cat-code">C07</span> Red</span>
+              <span class="cat-sub">Offline, sin conexión, SAS</span>
             </div>
           </div>
-          <div class="cat-card" onclick="selectCategory('Software / Sistema', '💻', this)">
+          <div class="cat-card" onclick="selectCategory('C08 · Contadoras / Sensores', '🔢', this)">
+            <span class="cat-icon">🔢</span>
+            <div class="cat-text">
+              <span class="cat-name"><span class="cat-code">C08</span> Sensores</span>
+              <span class="cat-sub">Error conteo, atasco CIS</span>
+            </div>
+          </div>
+          <div class="cat-card" onclick="selectCategory('C09 · Software / Sistema', '💻', this)">
             <span class="cat-icon">💻</span>
             <div class="cat-text">
-              <span class="cat-name">Software</span>
-              <span class="cat-sub">Cuelgue, error sistema</span>
+              <span class="cat-name"><span class="cat-code">C09</span> Software</span>
+              <span class="cat-sub">Blue screen, error SO, bloqueo</span>
             </div>
           </div>
-          <div class="cat-card" onclick="selectCategory('Mecánica / Física', '⚙️', this)">
-            <span class="cat-icon">⚙️</span>
-            <div class="cat-text">
-              <span class="cat-name">Mecánica</span>
-              <span class="cat-sub">Puerta, pulsadores, botones</span>
-            </div>
-          </div>
-          <div class="cat-card" onclick="selectCategory('Iluminación / Luz', '💡', this)">
+          <div class="cat-card" onclick="selectCategory('C10 · Botones / Iluminación', '💡', this)">
             <span class="cat-icon">💡</span>
             <div class="cat-text">
-              <span class="cat-name">Iluminación</span>
-              <span class="cat-sub">Leds, fluorescentes</span>
+              <span class="cat-name"><span class="cat-code">C10</span> Botones / Luz</span>
+              <span class="cat-sub">LEDs, botonera, toppers</span>
             </div>
           </div>
-          <div class="cat-card" onclick="selectCategory('Sonido / Audio', '🔊', this)">
-            <span class="cat-icon">🔊</span>
+          <div class="cat-card" onclick="selectCategory('C11 · Efectivo / Discrepancias', '🏦', this)">
+            <span class="cat-icon">🏦</span>
             <div class="cat-text">
-              <span class="cat-name">Sonido</span>
-              <span class="cat-sub">Altavoces, audio</span>
+              <span class="cat-name"><span class="cat-code">C11</span> Efectivo</span>
+              <span class="cat-sub">Descuadre caja, bolsa rota</span>
             </div>
           </div>
-          <div class="cat-card" onclick="selectCategory('Otro', '❓', this)">
-            <span class="cat-icon">❓</span>
+          <div class="cat-card" onclick="selectCategory('C12 · Daño Físico / Vandalismo', '🛡️', this)">
+            <span class="cat-icon">🛡️</span>
             <div class="cat-text">
-              <span class="cat-name">Otro</span>
-              <span class="cat-sub">No clasificado</span>
+              <span class="cat-name"><span class="cat-code">C12</span> Daño Físico</span>
+              <span class="cat-sub">Cristal roto, líquidos, golpes</span>
+            </div>
+          </div>
+          <div class="cat-card" onclick="selectCategory('C13 · Multiavería Sala', '🚨', this)">
+            <span class="cat-icon">🚨</span>
+            <div class="cat-text">
+              <span class="cat-name"><span class="cat-code">C13</span> Multiavería</span>
+              <span class="cat-sub">Varias máquinas, evento común</span>
+            </div>
+          </div>
+          <div class="cat-card" onclick="selectCategory('C14 · Preventivo Programado', '🔧', this)">
+            <span class="cat-icon">🔧</span>
+            <div class="cat-text">
+              <span class="cat-name"><span class="cat-code">C14</span> Preventivo</span>
+              <span class="cat-sub">Mantenimiento planificado</span>
             </div>
           </div>
         </div>
@@ -884,6 +1003,23 @@
       <div class="field">
         <label>Pasos ya probados</label>
         <input type="text" id="pasos" placeholder="ej. Reinicio, revisión billetero..." autocomplete="off">
+      </div>
+
+      <div class="field">
+        <label>Fotografías <span style="color:var(--muted);font-size:9px;">(máx. 4 fotos)</span></label>
+        <div class="photo-upload-area" id="photoUploadArea" onclick="document.getElementById('photoInput').click()">
+          <input type="file" id="photoInput" accept="image/*" multiple capture="environment" style="display:none" onchange="handlePhotos(this)">
+          <div class="photo-placeholder" id="photoPlaceholder">
+            <span style="font-size:28px;">📸</span>
+            <span style="font-size:13px;font-weight:700;margin-top:6px;">Toca para añadir fotos</span>
+            <span style="font-size:11px;color:var(--muted);">Cámara o galería · máx. 4 imágenes</span>
+          </div>
+          <div class="photo-grid" id="photoGrid" style="display:none;"></div>
+        </div>
+        <div style="display:flex;gap:6px;margin-top:6px;">
+          <button type="button" class="photo-action-btn" onclick="event.stopPropagation();document.getElementById('photoInput').click()">📷 Cámara</button>
+          <button type="button" class="photo-action-btn" onclick="event.stopPropagation();clearPhotos()">🗑️ Borrar todo</button>
+        </div>
       </div>
 
       <div class="field">
@@ -1027,16 +1163,20 @@
 
   // ─── SYMPTOM SUGGESTIONS PER CATEGORY ───
   const symptoms = {
-    'Billetero / MDB': ['No acepta billetes', 'Billetes atascados', 'Error lectura', 'No devuelve cambio', 'Comunicación MDB perdida'],
-    'SSP / Monedas': ['No acepta monedas', 'No entrega monedas', 'Error hopper', 'Canalizador bloqueado', 'Error SSP'],
-    'Pantalla / Display': ['Sin imagen', 'Pantalla negra', 'Imagen distorsionada', 'Líneas en pantalla', 'Pantalla táctil no responde'],
-    'Electrónica / Placa': ['No enciende', 'Se apaga sola', 'Error placa', 'Fallo fuente alimentación', 'Conector suelto'],
-    'Conectividad / Red': ['Sin comunicación SAS', 'Error de red', 'Sin internet', 'Desconectada del sistema', 'Error link'],
-    'Software / Sistema': ['Se cuelga', 'Error en pantalla', 'No arranca juego', 'Pantalla azul', 'Necesita reinicio'],
-    'Mecánica / Física': ['Puerta no cierra', 'Botón atascado', 'Pulsador roto', 'Ruido extraño', 'Daño físico'],
-    'Iluminación / Luz': ['Sin luz interna', 'LEDs fundidos', 'Parpadeo', 'Marquesina sin luz'],
-    'Sonido / Audio': ['Sin sonido', 'Sonido distorsionado', 'Altavoz roto', 'Volumen incorrecto'],
-    'Otro': ['Problema no clasificado', 'Revisión preventiva']
+    'C01 · Energía / Arranque': ['No enciende', 'Reinicios constantes (boot loop)', 'Olor a quemado', 'Humo o chispas', 'Se apaga sola', 'Fallo fuente alimentación'],
+    'C02 · Pantalla / Vídeo / Audio': ['Pantalla negra', 'No Signal', 'Colores distorsionados', 'Imagen con glitches', 'Sin sonido', 'Retroiluminación apagada'],
+    'C03 · Billetero / MDB': ['No acepta billetes', 'Escupe el billete', 'Luz roja encendida', 'Atasco en boca de entrada', 'Billetero apagado', 'Error de lectura'],
+    'C04 · Monedas / Hopper': ['No acepta monedas', 'No paga premios', 'Ruido de motor sin salida', 'Atasco físico en canal', 'Hopper vacío'],
+    'C05 · Pagos / Devolución': ['Paga de menos', 'Paga de más', 'Se queda pensando al pagar', 'Error lógico contabilidad', 'No devuelve cambio'],
+    'C06 · Puertas / Cerraduras': ['Llave rota dentro del bombín', 'Cerradura forzada', 'Puerta no cierra bien', 'No gira la llave'],
+    'C07 · Red / Telemetría': ['Máquina offline', 'Error de enlace con servidor', 'Fallo contabilidad remota', 'Toda la sala sin red', 'Una sola máquina sin red'],
+    'C08 · Contadoras / Sensores': ['Error de conteo', 'Atasco en contadora', 'Sensores sucios', 'Rodillos desgastados'],
+    'C09 · Software / Sistema': ['Pantalla azul', 'Error de sistema', 'Bloqueo al entrar menú', 'Pérdida de configuración', 'Juego no arranca'],
+    'C10 · Botones / Iluminación': ['Botón no responde', 'Botón intermitente', 'LEDs fundidos', 'Topper apagado', 'Tira LED rota'],
+    'C11 · Efectivo / Discrepancias': ['Descuadre de caja', 'Bolsa rota o sin precinto', 'Falta dinero', 'Problema en transporte de fondos'],
+    'C12 · Daño Físico / Vandalismo': ['Cristal roto', 'Líquido vertido sobre máquina', 'Golpes o intento de robo', 'Daño físico visible'],
+    'C13 · Multiavería Sala': ['Varias máquinas caídas', 'Subida de tensión', 'Corte eléctrico general', 'Fallo masivo de red'],
+    'C14 · Preventivo Programado': ['Revisión rutina planificada', 'Mantenimiento calendario', 'Checklist preventivo']
   };
 
   // ─── PRIORITY SELECT ───
@@ -1055,6 +1195,16 @@
     el.classList.add('selected');
     updateNextBtn1();
     navigator.vibrate && navigator.vibrate(20);
+    // Alert for critical categories
+    const critical = ['C01 · Energía / Arranque', 'C11 · Efectivo / Discrepancias', 'C12 · Daño Físico / Vandalismo'];
+    if (critical.includes(name)) {
+      const msgs = {
+        'C01 · Energía / Arranque': '⚡ ALERTA S1: Si hay olor a quemado o humo, desenchufa la máquina inmediatamente.',
+        'C11 · Efectivo / Discrepancias': '💰 ALERTA S1: Riesgo patrimonial. Reporta solo datos numéricos, sin relatos.',
+        'C12 · Daño Físico / Vandalismo': '🛡️ ALERTA S1: Si hay líquidos, aísla la máquina. Riesgo de cortocircuito.'
+      };
+      showToast(msgs[name]);
+    }
   }
 
   function updateNextBtn1() {
@@ -1185,7 +1335,8 @@
       inicio: document.getElementById('inicio').value,
       pasos: document.getElementById('pasos').value.trim(),
       recaudacion: state.recaudacion,
-      empleado
+      empleado,
+      numFotos: photoFiles.length
     };
 
     // Show loading state
@@ -1297,6 +1448,7 @@
     document.getElementById('nextBtn1').disabled = true;
 
     // Reset form
+    clearPhotos();
     ['salon', 'modelo', 'serie', 'sintoma', 'errores', 'pasos', 'empleado'].forEach(id => {
       document.getElementById(id).value = '';
     });
@@ -1441,6 +1593,79 @@
 
   // Init sheets status on load
   window.addEventListener('load', updateSheetsStatus);
+
+
+  // ─── PHOTO HANDLING ───
+  let photoFiles = [];
+
+  function handlePhotos(input) {
+    const files = Array.from(input.files);
+    const remaining = 4 - photoFiles.length;
+    const toAdd = files.slice(0, remaining);
+    toAdd.forEach(file => {
+      if (file.type.startsWith('image/')) {
+        photoFiles.push(file);
+      }
+    });
+    input.value = '';
+    renderPhotoGrid();
+  }
+
+  function renderPhotoGrid() {
+    const grid = document.getElementById('photoGrid');
+    const placeholder = document.getElementById('photoPlaceholder');
+    const area = document.getElementById('photoUploadArea');
+
+    if (photoFiles.length === 0) {
+      grid.style.display = 'none';
+      placeholder.style.display = 'flex';
+      area.classList.remove('has-photos');
+      return;
+    }
+
+    grid.style.display = 'grid';
+    placeholder.style.display = 'none';
+    area.classList.add('has-photos');
+
+    grid.innerHTML = photoFiles.map((f, i) => {
+      const url = URL.createObjectURL(f);
+      return `<div class="photo-thumb">
+        <img src="${url}" alt="Foto ${i+1}">
+        <button class="remove-photo" onclick="event.stopPropagation();removePhoto(${i})">✕</button>
+      </div>`;
+    }).join('');
+
+    // Show count
+    const existing = document.getElementById('photoCountBadge');
+    if (existing) existing.remove();
+    if (photoFiles.length > 0) {
+      const badge = document.createElement('div');
+      badge.id = 'photoCountBadge';
+      badge.className = 'photo-count-badge';
+      badge.innerHTML = `📸 ${photoFiles.length} foto${photoFiles.length > 1 ? 's' : ''} adjunta${photoFiles.length > 1 ? 's' : ''}`;
+      area.parentNode.insertBefore(badge, area.nextSibling.nextSibling);
+    }
+  }
+
+  function removePhoto(index) {
+    photoFiles.splice(index, 1);
+    renderPhotoGrid();
+  }
+
+  function clearPhotos() {
+    photoFiles = [];
+    renderPhotoGrid();
+    const badge = document.getElementById('photoCountBadge');
+    if (badge) badge.remove();
+  }
+
+  async function fotosToBase64() {
+    return Promise.all(photoFiles.map(f => new Promise((res) => {
+      const r = new FileReader();
+      r.onload = e => res(e.target.result);
+      r.readAsDataURL(f);
+    })));
+  }
 
   // ─── PWA INSTALL ───
   let deferredPrompt;
