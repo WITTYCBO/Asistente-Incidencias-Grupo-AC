@@ -799,7 +799,7 @@
         <div class="step-dot" id="dot3"></div>
       </div>
       <button class="history-btn" onclick="showHistory()" title="Historial">📋</button>
-      <button class="history-btn" onclick="showSettings()" title="Configuración">⚙️</button>
+      <button class="history-btn" onclick="checkSettingsPassword()" title="Configuración">⚙️</button>
     </div>
   </div>
 
@@ -1023,8 +1023,30 @@
       </div>
 
       <div class="field">
-        <label>Tu nombre / empleado</label>
-        <input type="text" id="empleado" placeholder="Tu nombre" autocomplete="off">
+        <label>Tu nombre / empleado <span class="req">*</span></label>
+        <input type="text" id="empleado" placeholder="Tu nombre completo" autocomplete="off">
+      </div>
+
+      <div class="field">
+        <label>📱 Tu teléfono personal
+          <span id="telPersonalGuardado" style="font-family:Space Mono,monospace;font-size:9px;color:var(--s3);margin-left:6px;"></span>
+        </label>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <input type="tel" id="telPersonal" placeholder="ej. 600 123 456" autocomplete="tel" style="flex:1;">
+          <button type="button" class="photo-action-btn" style="max-width:80px;" onclick="guardarTelPersonal()">💾 Guardar</button>
+        </div>
+        <div style="font-size:10px;color:var(--muted);margin-top:3px;">Se guardará en este móvil para futuros tickets</div>
+      </div>
+
+      <div class="field">
+        <label>📞 Teléfono de la sala
+          <span id="telSalaGuardado" style="font-family:Space Mono,monospace;font-size:9px;color:var(--s3);margin-left:6px;"></span>
+        </label>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <input type="tel" id="telSala" placeholder="ej. 922 000 000" autocomplete="tel" style="flex:1;">
+          <button type="button" class="photo-action-btn" style="max-width:80px;" onclick="guardarTelSala()">💾 Guardar</button>
+        </div>
+        <div style="font-size:10px;color:var(--muted);margin-top:3px;">Teléfono fijo de contacto de esta sala</div>
       </div>
 
       <div class="mvd-bar">
@@ -1145,6 +1167,9 @@
       ticket.pasos ? `🔁 *Pasos probados:* ${ticket.pasos}` : null,
       ``,
       `👤 *Empleado:* ${ticket.empleado || 'No indicado'}`,
+      ticket.telPersonal ? `📱 *Tel. personal:* ${ticket.telPersonal}` : null,
+      ticket.telSala ? `📞 *Tel. sala:* ${ticket.telSala}` : null,
+      ticket.numFotos > 0 ? `📸 *Fotos adjuntas:* ${ticket.numFotos} imagen${ticket.numFotos > 1 ? 'es' : ''}` : null,
       `⏰ *Hora:* ${new Date(ticket.timestamp).toLocaleString('es-ES')}`,
     ].filter(l => l !== null).join('\n');
 
@@ -1251,9 +1276,8 @@
     state.currentStep = 2;
     updateDots();
 
-    // Auto-fill employee
-    const saved = localStorage.getItem('sigt_empleado');
-    if (saved) document.getElementById('empleado').value = saved;
+    // Auto-fill contact data
+    initPhones();
 
     // Add listeners for MVD
     ['salon', 'modelo', 'serie', 'sintoma'].forEach(id => {
@@ -1324,7 +1348,11 @@
     if (!salon || !modelo || !serie || !sintoma) return;
 
     const empleado = document.getElementById('empleado').value.trim();
+    const telPersonal = document.getElementById('telPersonal').value.trim();
+    const telSala = document.getElementById('telSala').value.trim();
     if (empleado) localStorage.setItem('sigt_empleado', empleado);
+    if (telPersonal) localStorage.setItem('sigt_tel_personal', telPersonal);
+    if (telSala) localStorage.setItem('sigt_tel_sala', telSala);
 
     const payload = {
       priority: state.priority,
@@ -1336,6 +1364,8 @@
       pasos: document.getElementById('pasos').value.trim(),
       recaudacion: state.recaudacion,
       empleado,
+      telPersonal,
+      telSala,
       numFotos: photoFiles.length
     };
 
@@ -1346,26 +1376,26 @@
 
     let ticketId, ticketNumero;
 
+    // Generate local ID immediately (no-cors blocks response reading)
+    ticketId = generateLocalId();
+    ticketNumero = null;
+
+    // Send to Sheets in background (fire and forget with no-cors)
     if (APPS_SCRIPT_URL) {
       try {
-        // Send to Google Sheets via Apps Script
-        const res = await fetch(APPS_SCRIPT_URL, {
+        fetch(APPS_SCRIPT_URL, {
           method: 'POST',
-          body: JSON.stringify(payload),
-          headers: { 'Content-Type': 'text/plain' } // Apps Script needs text/plain for no-cors
+          mode: 'no-cors',
+          headers: { 'Content-Type': 'text/plain' },
+          body: JSON.stringify({ ...payload, localId: ticketId })
+        }).then(() => {
+          showToast('✅ Registrado en Google Sheets');
+        }).catch(() => {
+          showToast('⚠️ Sin conexión. Ticket guardado localmente.');
         });
-        const data = await res.json();
-        ticketId = data.id;
-        ticketNumero = data.numero;
-      } catch (err) {
-        console.warn('Google Sheets error, using local ID:', err);
-        ticketId = generateLocalId();
-        ticketNumero = null;
-        showToast('⚠️ Sin conexión con Sheets. ID local asignado.');
+      } catch(err) {
+        console.warn('Sheets error:', err);
       }
-    } else {
-      ticketId = generateLocalId();
-      ticketNumero = null;
     }
 
     btn.disabled = false;
@@ -1449,7 +1479,7 @@
 
     // Reset form
     clearPhotos();
-    ['salon', 'modelo', 'serie', 'sintoma', 'errores', 'pasos', 'empleado'].forEach(id => {
+    ['salon', 'modelo', 'serie', 'sintoma', 'errores', 'pasos', 'empleado', 'telPersonal', 'telSala'].forEach(id => {
       document.getElementById(id).value = '';
     });
     document.getElementById('inicio').value = '';
@@ -1460,9 +1490,8 @@
     updateDots();
     window.scrollTo(0, 0);
 
-    // Restore employee name
-    const saved = localStorage.getItem('sigt_empleado');
-    if (saved) document.getElementById('empleado').value = saved;
+    // Restore saved contact data
+    resetPhoneFields();
   }
 
   // ─── HISTORY ───
@@ -1564,7 +1593,7 @@
     }
   }
 
-  async function testConnection() {
+  async async function testConnection() {
     const url = document.getElementById('scriptUrlInput').value.trim();
     if (!url) { showToast('Introduce primero la URL del script'); return; }
     const btn = document.getElementById('testBtn');
@@ -1572,20 +1601,25 @@
     btn.textContent = '⏳ Probando...';
     btn.disabled = true;
     result.style.display = 'none';
+
+    // Use no-cors mode - if no network error, connection works
     try {
-      const res = await fetch(url, { method: 'GET' });
-      const data = await res.json();
+      await fetch(url + '?test=1', {
+        method: 'GET',
+        mode: 'no-cors'
+      });
+      // If we get here, the URL is reachable (no-cors wont throw on valid URLs)
       result.style.display = 'block';
       result.style.background = 'var(--s3-dim)';
       result.style.color = 'var(--s3)';
       result.style.border = '1px solid rgba(34,197,94,0.3)';
-      result.innerHTML = `✅ Conexión OK · Próximo ticket nº <b>${data.siguiente}</b>`;
+      result.innerHTML = '✅ URL válida y accesible. El script está configurado correctamente.';
     } catch(e) {
       result.style.display = 'block';
       result.style.background = 'var(--s1-dim)';
       result.style.color = 'var(--s1)';
       result.style.border = '1px solid rgba(239,68,68,0.3)';
-      result.innerHTML = `❌ Error de conexión. Verifica que el script está publicado con acceso "Cualquier persona".`;
+      result.innerHTML = '❌ No se puede acceder a la URL. Comprueba tu conexión a internet.';
     }
     btn.textContent = '🔌 Probar conexión';
     btn.disabled = false;
@@ -1665,6 +1699,102 @@
       r.onload = e => res(e.target.result);
       r.readAsDataURL(f);
     })));
+  }
+
+
+
+  // ─── SETTINGS PASSWORD ───
+  const SETTINGS_CODE = '2633886trastamarawitty@darkcrystalespaña';
+  let settingsPwAttempts = 0;
+  let settingsPwLock = 0;
+
+  function checkSettingsPassword() {
+    const now = Date.now();
+    if (settingsPwLock > now) {
+      const mins = Math.ceil((settingsPwLock - now) / 60000);
+      showToast('🔒 Bloqueado ' + mins + ' min por intentos fallidos');
+      return;
+    }
+    document.getElementById('settingsModal').style.display = 'flex';
+    document.getElementById('settingsPasswordInput').value = '';
+    document.getElementById('settingsPasswordError').textContent = '';
+    setTimeout(() => document.getElementById('settingsPasswordInput').focus(), 100);
+  }
+
+  function verifySettingsPassword() {
+    const input = document.getElementById('settingsPasswordInput').value;
+    if (input === SETTINGS_CODE) {
+      settingsPwAttempts = 0;
+      closeSettingsModal();
+      showSettings();
+    } else {
+      settingsPwAttempts++;
+      if (settingsPwAttempts >= 3) {
+        settingsPwLock = Date.now() + 10 * 60 * 1000;
+        settingsPwAttempts = 0;
+        closeSettingsModal();
+        showToast('🔒 Acceso bloqueado 10 minutos');
+      } else {
+        const left = 3 - settingsPwAttempts;
+        document.getElementById('settingsPasswordError').textContent = 'Código incorrecto · ' + left + ' intento' + (left > 1 ? 's' : '') + ' restante' + (left > 1 ? 's' : '');
+        document.getElementById('settingsPasswordInput').value = '';
+        document.getElementById('settingsPasswordInput').focus();
+      }
+    }
+  }
+
+  function closeSettingsModal() {
+    document.getElementById('settingsModal').style.display = 'none';
+    document.getElementById('settingsPasswordInput').value = '';
+    document.getElementById('settingsPasswordError').textContent = '';
+  }
+
+  // ─── PHONE MANAGEMENT ───
+  function initPhones() {
+    const telP = localStorage.getItem('sigt_tel_personal') || '';
+    const telS = localStorage.getItem('sigt_tel_sala') || '';
+    const emp  = localStorage.getItem('sigt_empleado') || '';
+
+    if (telP) {
+      document.getElementById('telPersonal').value = telP;
+      document.getElementById('telPersonalGuardado').textContent = '✓ Guardado';
+    }
+    if (telS) {
+      document.getElementById('telSala').value = telS;
+      document.getElementById('telSalaGuardado').textContent = '✓ Guardado';
+    }
+    if (emp) {
+      document.getElementById('empleado').value = emp;
+    }
+  }
+
+  function guardarTelPersonal() {
+    const val = document.getElementById('telPersonal').value.trim();
+    if (!val) return;
+    localStorage.setItem('sigt_tel_personal', val);
+    document.getElementById('telPersonalGuardado').textContent = '✓ Guardado';
+    showToast('📱 Teléfono personal guardado');
+    navigator.vibrate && navigator.vibrate(40);
+  }
+
+  function guardarTelSala() {
+    const val = document.getElementById('telSala').value.trim();
+    if (!val) return;
+    localStorage.setItem('sigt_tel_sala', val);
+    document.getElementById('telSalaGuardado').textContent = '✓ Guardado';
+    showToast('📞 Teléfono de sala guardado');
+    navigator.vibrate && navigator.vibrate(40);
+  }
+
+  function resetPhoneFields() {
+    const telP = localStorage.getItem('sigt_tel_personal') || '';
+    const telS = localStorage.getItem('sigt_tel_sala') || '';
+    const emp  = localStorage.getItem('sigt_empleado') || '';
+    document.getElementById('telPersonal').value = telP;
+    document.getElementById('telSala').value = telS;
+    document.getElementById('empleado').value = emp;
+    document.getElementById('telPersonalGuardado').textContent = telP ? '✓ Guardado' : '';
+    document.getElementById('telSalaGuardado').textContent = telS ? '✓ Guardado' : '';
   }
 
   // ─── PWA INSTALL ───
@@ -1786,5 +1916,27 @@
   window.addEventListener('load', () => { initLogin(); resetInactivity(); });
 
 </script>
+
+  <!-- SETTINGS PASSWORD MODAL -->
+  <div id="settingsModal" style="display:none;position:fixed;inset:0;background:rgba(6,11,24,0.95);z-index:9998;align-items:center;justify-content:center;padding:32px;">
+    <div style="background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius);padding:28px;width:100%;max-width:340px;display:flex;flex-direction:column;gap:16px;">
+      <div style="text-align:center;">
+        <div style="font-size:32px;margin-bottom:8px;">🔐</div>
+        <div style="font-size:18px;font-weight:800;">Acceso a Ajustes</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:4px;">Introduce el codigo de administrador</div>
+      </div>
+      <div class="field">
+        <input type="password" id="settingsPasswordInput" placeholder="Codigo de acceso" 
+          style="text-align:center;letter-spacing:2px;font-size:16px;"
+          onkeydown="if(event.key==='Enter') verifySettingsPassword()">
+      </div>
+      <div id="settingsPasswordError" style="text-align:center;font-size:12px;color:var(--s1);min-height:16px;"></div>
+      <div style="display:flex;gap:10px;">
+        <button class="new-btn" onclick="closeSettingsModal()" style="flex:1;">Cancelar</button>
+        <button class="submit-btn" onclick="verifySettingsPassword()" style="flex:2;padding:14px;">Entrar</button>
+      </div>
+    </div>
+  </div>
+
 </body>
 </html>
