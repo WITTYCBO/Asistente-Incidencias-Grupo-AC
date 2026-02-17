@@ -1171,7 +1171,7 @@
       `👤 *Empleado:* ${ticket.empleado || 'No indicado'}`,
       ticket.telPersonal ? `📱 *Tel. personal:* ${ticket.telPersonal}` : null,
       ticket.telSala ? `📞 *Tel. sala:* ${ticket.telSala}` : null,
-      ticket.numFotos > 0 ? `📸 *Fotos adjuntas:* ${ticket.numFotos} imagen${ticket.numFotos > 1 ? 'es' : ''}` : null,
+      ticket.numFotos > 0 && ticket.folderUrl ? `📸 *Fotos en Drive:* ${ticket.folderUrl}` : (ticket.numFotos > 0 ? `📸 *Fotos adjuntas:* ${ticket.numFotos}` : null),
       `⏰ *Hora:* ${new Date(ticket.timestamp).toLocaleString('es-ES')}`,
     ].filter(l => l !== null).join('\n');
 
@@ -1378,46 +1378,87 @@
 
     let ticketId, ticketNumero;
 
-    // Generate local ID immediately (no-cors blocks response reading)
+    // Encode photos to base64 and send everything to Apps Script
     ticketId = generateLocalId();
     ticketNumero = null;
+    var folderUrl = '';
 
-    // Send to Sheets in background (fire and forget with no-cors)
-    if (APPS_SCRIPT_URL) {
-      try {
-        fetch(APPS_SCRIPT_URL, {
-          method: 'POST',
-          mode: 'no-cors',
-          headers: { 'Content-Type': 'text/plain' },
-          body: JSON.stringify({ ...payload, localId: ticketId })
-        }).then(() => {
-          showToast('✅ Registrado en Google Sheets');
-        }).catch(() => {
-          showToast('⚠️ Sin conexión. Ticket guardado localmente.');
-        });
-      } catch(err) {
-        console.warn('Sheets error:', err);
-      }
+    var btn = document.getElementById('submitBtn');
+    if (photoFiles.length > 0) {
+      btn.innerHTML = '⏳ Subiendo fotos...';
+    } else {
+      btn.innerHTML = '⏳ Registrando...';
     }
 
+    function encodePhotos(files, callback) {
+      if (files.length === 0) { callback([]); return; }
+      var results = [];
+      var pending = files.length;
+      files.forEach(function(file, i) {
+        var reader = new FileReader();
+        reader.onload = function(e) {
+          results[i] = e.target.result;
+          pending--;
+          if (pending === 0) callback(results);
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+
+    encodePhotos(photoFiles, function(fotosBase64) {
+      var fullPayload = Object.assign({}, payload, {
+        localId: ticketId,
+        fotos: fotosBase64
+      });
+
+      if (APPS_SCRIPT_URL) {
+        fetch(APPS_SCRIPT_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain' },
+          body: JSON.stringify(fullPayload)
+        })
+        .then(function(res) { return res.json(); })
+        .then(function(data) {
+          if (data.id) ticketId = data.id;
+          folderUrl = data.folderUrl || '';
+          var msg = folderUrl ? '✅ Ticket registrado con ' + fotosBase64.length + ' foto(s) en Drive' : '✅ Registrado en Google Sheets';
+          showToast(msg);
+          finalizarTicket(payload, ticketId, folderUrl, fotosBase64.length);
+        })
+        .catch(function() {
+          showToast('⚠️ Sin conexión. Ticket guardado localmente.');
+          finalizarTicket(payload, ticketId, '', fotosBase64.length);
+        });
+      } else {
+        finalizarTicket(payload, ticketId, '', fotosBase64.length);
+      }
+    });
+
+    return; // finalizarTicket handles the rest
+    var folderUrl_placeholder = '';
+  }
+
+  function finalizarTicket(payload, ticketId, folderUrl, numFotos) {
+    var btn = document.getElementById('submitBtn');
     btn.disabled = false;
     btn.innerHTML = '⚡ Abrir Incidencia';
 
-    const ticket = {
+    var ticket = {
       id: ticketId,
-      numero: ticketNumero,
       timestamp: new Date().toISOString(),
-      ...payload
+      folderUrl: folderUrl,
+      numFotos: numFotos
     };
+    Object.keys(payload).forEach(function(k) { ticket[k] = payload[k]; });
 
-    // Save to localStorage
-    const tickets = JSON.parse(localStorage.getItem('sigt_tickets') || '[]');
+    var tickets = JSON.parse(localStorage.getItem('sigt_tickets') || '[]');
     tickets.unshift(ticket);
     localStorage.setItem('sigt_tickets', JSON.stringify(tickets.slice(0, 100)));
 
     showSuccess(ticket);
     currentTicket = ticket;
     navigator.vibrate && navigator.vibrate([100, 50, 100]);
+    clearPhotos();
   }
 
   function showToast(msg) {
@@ -1454,7 +1495,7 @@
       ['Hora apertura', new Date(ticket.timestamp).toLocaleTimeString('es-ES', {hour:'2-digit', minute:'2-digit'})]
     ];
 
-    summary.innerHTML = rows.map(([k, v]) => `
+    summary.innerHTML = rows.filter(function(r){return r!=null;}).map(([k, v]) => `
       <div class="ticket-row">
         <span class="t-key">${k}</span>
         <span class="t-val" style="text-align:right;max-width:60%">${v}</span>
